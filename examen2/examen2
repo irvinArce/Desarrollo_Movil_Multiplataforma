@@ -1,51 +1,87 @@
 /*
-Examen Segundo parcial
-Profesor: Ray Brunett Parra Galaviz
-Alumno: Arce Llamas Irvin de Jesus
-Grupo: 5A
+Segundo Parcial - Examen
+Instructor: Ray Brunett Parra Galaviz
+Estudiante: Arce Llamas Irvin de Jesus
+Clase: 5A
 Cuatrimestre: 5
 Fecha: 05/07/2024
 */
 
+import { StatusBar } from 'expo-status-bar';
+import { Button, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
+import { initializeApp } from 'firebase/app';
+import { getAnalytics } from 'firebase/analytics';
+import { useState, useEffect } from 'react';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 
-//Evidencias del Examen 2:
+const firebaseConfig = {
+  apiKey: "AIzaSyA-diff-key",
+  authDomain: "example-app.firebaseapp.com",
+  projectId: "example-app",
+  storageBucket: "example-app.appspot.com",
+  messagingSenderId: "1234567890",
+  appId: "1:1234567890:web:abcdef123456",
+  measurementId: "G-ABCDEFGH"
+};
 
-// - Componente para el formulario de SignIn para usuarios registrados
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
-<Text style={styles.title}>{isLogin ? 'Sign In' : 'Sign Up'}</Text>
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Password"
-        secureTextEntry
-      />
-      
+const LoginForm = ({ email, password, setEmail, setPassword, handleLogin }) => (
+  <View style={styles.formContainer}>
+    <Text style={styles.header}>Iniciar Sesión</Text>
+    <TextInput
+      style={styles.textInput}
+      value={email}
+      onChangeText={setEmail}
+      placeholder="Correo"
+      autoCapitalize="none"
+    />
+    <TextInput
+      style={styles.textInput}
+      value={password}
+      onChangeText={setPassword}
+      placeholder="Contraseña"
+      secureTextEntry
+    />
+    <View style={styles.buttonWrapper}>
+      <Button title="Iniciar Sesión" color="#2196F3" onPress={handleLogin} />
+    </View>
+  </View>
+);
 
-// - Componente para el formulario de SignUp en caso de que el usuario no tenga cuenta
+const RegisterForm = ({ email, password, setEmail, setPassword, handleRegister }) => (
+  <View style={styles.formContainer}>
+    <Text style={styles.header}>Registrarse</Text>
+    <TextInput
+      style={styles.textInput}
+      value={email}
+      onChangeText={setEmail}
+      placeholder="Correo"
+      autoCapitalize="none"
+    />
+    <TextInput
+      style={styles.textInput}
+      value={password}
+      onChangeText={setPassword}
+      placeholder="Contraseña"
+      secureTextEntry
+    />
+    <View style={styles.buttonWrapper}>
+      <Button title="Registrarse" color="#2196F3" onPress={handleRegister} />
+    </View>
+  </View>
+);
 
-<View style={styles.buttonContainer}>
-        <Button
-          title={isLogin ? 'Sign In' : 'Sign Up'}
-          color='#3498db'
-          onPress={handleAuthentication}
-        />
-      </View>
-      <View style={styles.bottomContainer}>
-        <Text style={styles.toggleText} onPress={() => setIsLogin(!isLogin)}>
-          {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
-        </Text>
-      </View>
+const AuthenticatedView = ({ user, handleLogout }) => (
+  <View style={styles.formContainer}>
+    <Text style={styles.header}>Bienvenido</Text>
+    <Text style={styles.userEmail}>{user.email}</Text>
+    <Button title="Cerrar Sesión" onPress={handleLogout} color="#FF5252" />
+  </View>
+);
 
-// - Componente para realizar el SignIn y autenticarse en FireBase
-
+export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
@@ -60,41 +96,105 @@ Fecha: 05/07/2024
     return () => unsubscribe();
   }, [auth]);
 
-  const handleAuthentication = async () => {
+  const handleLogin = async () => {
     try {
-      if (user) {
-        console.log('User logged out successfully');
-        await signOut(auth);
-      } else {
-        if (isLogin) {
-          await signInWithEmailAndPassword(auth, email, password);
-          console.log('User signed in successfully');
-        } else {
-          await createUserWithEmailAndPassword(auth, email, password);
-          console.log('User created successfully');
-        }
-      }
+      await signInWithEmailAndPassword(auth, email, password);
+      console.log('Usuario autenticado');
     } catch (error) {
-      console.error('Authentication error:', error.message);
+      console.error('Error en autenticación:', error.message);
     }
-  }
+  };
 
-// - Componente para realizar el SignUp en Firebase
+  const handleRegister = async () => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Usuario registrado');
+    } catch (error) {
+      console.error('Error en registro:', error.message);
+    }
+  };
 
-   return (
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('Usuario desconectado');
+    } catch (error) {
+      console.error('Error en desconexión:', error.message);
+    }
+  };
+
+  return (
     <ScrollView contentContainerStyle={styles.container}>
       {user ? (
-        <AuthenticatedScreen user={user} handleAuthentication={handleAuthentication} />
-      ) : (
-        <AuthScreen
+        <AuthenticatedView user={user} handleLogout={handleLogout} />
+      ) : isLogin ? (
+        <LoginForm
           email={email}
           setEmail={setEmail}
           password={password}
           setPassword={setPassword}
-          isLogin={isLogin}
-          setIsLogin={setIsLogin}
-          handleAuthentication={handleAuthentication}
+          handleLogin={handleLogin}
+        />
+      ) : (
+        <RegisterForm
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          handleRegister={handleRegister}
         />
       )}
+      <View style={styles.toggleWrapper}>
+        <Text style={styles.toggleText} onPress={() => setIsLogin(!isLogin)}>
+          {isLogin ? '¿Necesitas una cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia Sesión'}
+        </Text>
+      </View>
     </ScrollView>
   );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FAFAFA',
+  },
+  formContainer: {
+    width: '80%',
+    maxWidth: 400,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 8,
+    elevation: 4,
+  },
+  header: {
+    fontSize: 24,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  textInput: {
+    height: 40,
+    borderColor: '#CCCCCC',
+    borderWidth: 1,
+    marginBottom: 16,
+    padding: 8,
+    borderRadius: 4,
+  },
+  buttonWrapper: {
+    marginBottom: 16,
+  },
+  toggleText: {
+    color: '#2196F3',
+    textAlign: 'center',
+  },
+  toggleWrapper: {
+    marginTop: 20,
+  },
+  userEmail: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+});
